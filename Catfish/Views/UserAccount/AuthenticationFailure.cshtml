@@ -1,0 +1,23 @@
+﻿
+@{
+    ViewBag.Title = "AuthenticationFailure";
+}
+
+<h2>AuthenticationFailure</h2>
+<h3 class="text-danger">You have not registered with us yet.</h3>
+@Html.ActionLink("Register","CreateUser", "UserAccount")
+
+<script>
+   
+        setTimeout(function () {
+        
+            if (confirm("You have not register with us yet, do you want to register?"))
+            {
+                alert("Go to Register page")
+            }
+            else {
+                alert("It's too bad")
+            }
+        }, 5000);
+   
+</script>

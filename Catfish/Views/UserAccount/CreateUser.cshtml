@@ -1,0 +1,26 @@
+﻿@model Catfish.Models.UserViewModel
+@{
+    ViewBag.Title = "Create";
+}
+
+<h2>Register</h2>
+
+
+ 
+@using (Html.BeginForm())
+{
+   
+    @Html.LabelFor(m=>m.Login)
+    @Html.TextBoxFor(m=>m.Login)
+    @Html.LabelFor(m => m.FirstName)
+    @Html.TextBoxFor(m => m.FirstName)
+    @Html.LabelFor(m => m.LastName)
+    @Html.TextBoxFor(m => m.LastName)
+    @Html.LabelFor(m => m.Password)
+    @Html.TextBoxFor(m => m.Password)
+    @Html.LabelFor(m => m.ConfirmPassword)
+    @Html.TextBoxFor(m => m.ConfirmPassword)
+
+    @Html.ActionLink("Submit", "CreateUser", "UserAccount")
+}
+

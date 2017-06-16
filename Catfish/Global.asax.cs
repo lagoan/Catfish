@@ -10,6 +10,8 @@ using System.Web.Http;
 using Piranha.WebPages;
 using Catfish.Core.Models.Metadata;
 using Catfish.Areas.Manager.ModelBinders;
+using System.Web.Helpers;
+using System.Security.Claims;
 
 namespace Catfish
 {
@@ -50,6 +52,8 @@ namespace Catfish
                   Permission = "ADMIN_CONTENT"
                   //,SelectedActions = "productlist,productedit"
               });
+
+            AntiForgeryConfig.UniqueClaimTypeIdentifier = ClaimTypes.Email;
         }
     }
 }

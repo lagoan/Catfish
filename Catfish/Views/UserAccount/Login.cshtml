@@ -1,0 +1,56 @@
+﻿
+@{
+    ViewBag.Title = "Login";
+}
+
+
+@if (ViewBag.AllowLocalLogin)
+{
+    <h2>Login</h2>
+    <hr />
+    <form method="post" action="@Href("~/UserAccount/Login")">
+    @*<input type="hidden" name="returnurl" value="@Href("~/home/mypage")" />
+        <input type="hidden" name="failureurl" value="@Href("~/home/mypage?msg=err")" />*@
+
+        <label>Username:</label><input type="text" name="login" />
+        <label>Password:</label><input type="password" name="password" />
+
+        <button type="submit">Login</button>
+    </form>
+}
+
+@if (ViewBag.AllowGoogleLogin)
+{
+    <h2>Social Login</h2>
+    <hr />
+   
+    using (Html.BeginForm("ExternalLogin", "UserAccount", new { ReturnUrl = "/", type = "Google" }))
+    {
+        @Html.AntiForgeryToken()
+        <div id="socialLoginList">
+            <button type="submit" class="btn btn-sm" id="btnGoogle" name="Google" value="Google" >
+               
+            </button>
+           
+        </div>
+    }
+}
+
+<style>
+    #btnGoogle {
+        background-image: url(/Content/Css/images/btn_google_signin_light.png); /* 16px x 16px */
+    background-color: transparent; /* make the button transparent */
+    background-repeat: no-repeat; /* make the background image appear only once */
+    background-position: 0px 0px; /* equivalent to 'top left' */
+    border: 1px solid Grey; /* assuming we don't want any borders */
+    cursor: pointer; /* make the cursor like hovering over an <a> element */
+    height: 45px; /* make this the size of your image */
+    padding-left: 180px; /* make text start to the right of the image */
+    vertical-align: middle; /* align the text vertically centered */
+    }
+   
+</style>
+<script>
+
+
+</script>
