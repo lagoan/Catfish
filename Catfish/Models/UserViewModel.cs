@@ -1,6 +1,6 @@
 ﻿
 using System.ComponentModel.DataAnnotations;
-
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Catfish.Models
 {
@@ -14,10 +14,16 @@ namespace Catfish.Models
         public string FirstName { get; set; }
         [Required]
         public string LastName { get; set; }
+
+
         [Required(ErrorMessage ="Password id required")]
+        [DataType(DataType.Password)]
         public string Password { get; set; }
-        [Required(ErrorMessage ="ConfirmPassword id required")]
-        [Compare("Password")]
+
+        [Required(ErrorMessage = "Confirm Password id required")]
+        [Display(Name = "Confirm password")]
+        [DataType(DataType.Password)]
+        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; }
     }
 

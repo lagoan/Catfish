@@ -8,7 +8,7 @@
         @UI.Head()
 
         <link type="text/css" rel="stylesheet" href="~/content/css/style.css" />
-
+        
         @RenderSection("head", required: false)
     </head>
     <body>
@@ -22,22 +22,33 @@
                 <p class="site-desc">@Site.SiteDescription</p>
                 <navigation role="main-navigation" style="float:right">
                     @UI.Menu(StopLevel: 1)
-                    @UI.Menu(StopLevel: 1, RootNode: "Login");
-                    @Html.ActionLink("Login", "Login","UserAccount")
+                   
                 </navigation>
             </div>
             <div style="float:right">
                 @{
                     if (HttpContext.Current.User.Identity.IsAuthenticated)
                     {
-                        string name = HttpContext.Current.User.Identity.Name;
+                        @*string name = string.Empty;
+
+                        name = HttpContext.Current.User.Identity.Name;
+                        if (ViewBag.UserName != null)
+                        {
+                            name = ViewBag.UserName;
+                        }
+                        name = ViewBag.UserName;
+
                         @:<p>Welcome, 
                             @name;
-                        @:</p>
+                        @:</p>*@
                
 
 
-                         @Html.ActionLink("Log me out", "Logout", "UserAccount");
+                         @Html.ActionLink("Logout", "Logout", "UserAccount", null, new { @class = "btn btn-default btn-success" });
+                    }
+                    else
+                    {
+                        @Html.ActionLink("Login", "Login", "UserAccount", null, new { @class = "btn btn-default btn-success" });
                     }
 
                 }

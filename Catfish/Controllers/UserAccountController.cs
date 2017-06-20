@@ -45,13 +45,12 @@ namespace Catfish.Controllers
                 {
                     //login sysuser into current context
                     db.LoginSys();
-
-                    //var usr = db.Users.SqlQuery("select * from dbo.sysuser where sysuser_login=@login", new SqlParameter("@login", model.Login));
                     success = Piranha.Models.SysUser.LoginUser(model.Login, model.Password);
 
-                    //logout : Piranha.Models.SysUser.LogoutUser();
+                   
                     if(success)
                     {
+                        ViewBag.UserName = model.Login;
                         return Redirect("~/");
                     }
                 }
@@ -86,16 +85,49 @@ namespace Catfish.Controllers
                 if (AllowAnonymousLogin())
                 {
                     //create local account and log he in
+                    UserViewModel uservm = new UserViewModel();
+                    uservm.Login = loginInfo.emailaddress;
+                    uservm.FirstName = loginInfo.givenname;
+                    uservm.LastName = loginInfo.surname;
+                    uservm.Email = loginInfo.emailaddress;
+                    uservm.Password = GetLoginKey();
+                    user = CreateNewUser(uservm);
+                    using (var db = new Piranha.DataContext())
+                    {
+                        // Login sysuser into the current context.
+                        db.LoginSys();
+                        db.Users.Add(user);
+                        if (db.SaveChanges() > 0)
+                        {
+                            //Log user in
+                            bool success = Piranha.Models.SysUser.LoginUser(uservm.Login, uservm.Password);
+
+                            if(success)
+                            {
+                                //redirect to ?? index page?
+                                return Redirect("~/");
+                            }
+                            else
+                            {
+                                //redirect to Login failure page
+                            }
+                        }
+
+                    }
                 }
                 else
                 {
+                    //user don't have profile yet and not allow anonymous login
+                    //redirect to Authentication failure page
+                    clearUserCookies();
                     return RedirectToAction("AuthenticationFailure");
                 }
             }
             else
             {
-                //log he in
-                bool success = Piranha.Models.SysUser.LoginUser(user.Login, user.Password);
+                //log he in using his gmail account
+               
+                bool success = Piranha.Models.SysUser.LoginUser(user.Login, GetLoginKey() );
             }
 
 
@@ -115,8 +147,8 @@ namespace Catfish.Controllers
             //         // HttpContext.GetOwinContext().Authentication.SignOut(DefaultAuthenticationTypes.ExternalCookie);
             //         HttpContext.GetOwinContext().Authentication.SignIn(
             //         new AuthenticationProperties { IsPersistent = false }, ident);
-            //         return Redirect("~/");
-            return View();
+                     return Redirect("~/");
+          
         }
 
         // GET: UserAccount
@@ -127,29 +159,9 @@ namespace Catfish.Controllers
 
         public ActionResult Logout()
         {
-            var currUserClaim = HttpContext.User.Identity as ClaimsIdentity;
-
-            System.Web.HttpContext.Current.GetOwinContext().Authentication.SignOut();//logout google account from our app
-
-            FormsAuthentication.SignOut(); //logout local account -- remove form authentication from browser
-
-            Session.Clear();  // This may not be needed -- but can't hurt
-            Session.Abandon();
-
-            // Clear authentication cookie
-            HttpCookie rFormsCookie = new HttpCookie(FormsAuthentication.FormsCookieName, "");
-            rFormsCookie.Expires = DateTime.Now.AddYears(-1);
-            Response.Cookies.Add(rFormsCookie);
-
-            // Clear session cookie 
-            HttpCookie rSessionCookie = new HttpCookie("ASP.NET_SessionId", "");
-            rSessionCookie.Expires = DateTime.Now.AddYears(-1);
-            Response.Cookies.Add(rSessionCookie);
-
-            // Invalidate the Cache on the Client Side
-            Response.Cache.SetCacheability(HttpCacheability.NoCache);
-
-            Response.Cache.SetNoStore();
+            //logout : 
+            //  Piranha.Models.SysUser.LogoutUser();
+            clearUserCookies();
             return Redirect("~/");
         }
 
@@ -171,46 +183,20 @@ namespace Catfish.Controllers
                 {
                     // Login sysuser into the current context.
                     db.LoginSys();
-
-                    var user = new Piranha.Entities.User()
-                    {
-                        Login = uservm.Login,
-                        Email = uservm.Email,
-                        Firstname = uservm.FirstName,
-                        Surname = uservm.LastName,
-                        GroupId =new Guid() // Here you need to add the id to a custom group for front end users.
-                    };
-
-                    if (!String.IsNullOrEmpty(uservm.Password))
-                    {
-                        user.Password = Piranha.Models.SysUserPassword.Encrypt(uservm.Password);
-                    }
+                    var user = CreateNewUser(uservm);
                     db.Users.Add(user);
-
-                    if (db.SaveChanges() > 0)
+                    if(db.SaveChanges() > 0)
                     {
-                        // Make sure that you have implemented the Hook Hooks.Mail.SendPassword
-                        if (String.IsNullOrEmpty(uservm.Password))
-                        {
-                            // user.GenerateAndSendPassword(db);
-                            //url redirect to ResetPassword page
-                            var callbackUrl = Url.Action("ResetPassword", "UserAccount", new { userId = user.Id}, protocol: Request.Url.Scheme);
-                            string message = "Please reset your password by clicking <a href=\"" + callbackUrl + "\">here</a>";
-                            string subject="Reset Password";
-                            string email= System.Configuration.ConfigurationManager.AppSettings["Email"];
-                            SendEmail(email, callbackUrl, subject, message);
-                        }
+                        //redirect to Login page
+                        return RedirectToAction("Login");
                     }
-                    else
-                    {//error saving user
-                        return View("YourFailureView");
-                    }
+                    
                 }
-                return View("YourSuccessView");
+                
             }
 
             //invalid modelview
-            return View("YourFailureView");
+            return View();
         }
 
 
@@ -271,6 +257,23 @@ namespace Catfish.Controllers
             return usr;
         }
 
+        private User CreateNewUser(UserViewModel uservm)
+        {
+
+            var user = new Piranha.Entities.User()
+            {
+                Login = uservm.Login,
+                Email = uservm.Email,
+                Firstname = uservm.FirstName,
+                Surname = uservm.LastName,
+                GroupId = GetInitialGroupId(), // Here you need to add the id to a custom group for front end users.
+            };
+            if (!String.IsNullOrEmpty(uservm.Password))
+            {
+                user.Password = Piranha.Models.SysUserPassword.Encrypt(uservm.Password);
+            }            
+                return user;  
+        }
         private void SendEmail(string email, string callbackUrl, string subject, string message)
         {
             // For information on sending mail, please visit http://go.microsoft.com/fwlink/?LinkID=320771
@@ -305,6 +308,47 @@ namespace Catfish.Controllers
         public bool AllowAnonymousLogin()
         {
             return Convert.ToBoolean(System.Configuration.ConfigurationManager.AppSettings["AllowAnonymousLogin"]);
+        }
+        public bool AllowResetPassword()
+        {
+            return Convert.ToBoolean(System.Configuration.ConfigurationManager.AppSettings["AllowResetPassword"]);
+        }
+        public string GetLoginKey()
+        {
+            return System.Configuration.ConfigurationManager.AppSettings["LoginKey"];
+        }
+        public Guid GetInitialGroupId()
+        {
+            Guid newGuid;
+            Guid.TryParse((System.Configuration.ConfigurationManager.AppSettings["InitialGroupId"]), out newGuid);
+            return newGuid;
+        }
+
+        public void clearUserCookies()
+        {
+            var currUserClaim = HttpContext.User.Identity as ClaimsIdentity;
+
+            System.Web.HttpContext.Current.GetOwinContext().Authentication.SignOut();//logout google account from our app
+
+            FormsAuthentication.SignOut(); //logout local account -- remove form authentication from browser
+
+            Session.Clear();  // This may not be needed -- but can't hurt
+            Session.Abandon();
+
+            //// Clear authentication cookie
+            HttpCookie rFormsCookie = new HttpCookie(FormsAuthentication.FormsCookieName, "");
+            rFormsCookie.Expires = DateTime.Now.AddYears(-1);
+            Response.Cookies.Add(rFormsCookie);
+
+            //// Clear session cookie 
+            HttpCookie rSessionCookie = new HttpCookie("ASP.NET_SessionId", "");
+            rSessionCookie.Expires = DateTime.Now.AddYears(-1);
+            Response.Cookies.Add(rSessionCookie);
+
+            //// Invalidate the Cache on the Client Side
+            Response.Cache.SetCacheability(HttpCacheability.NoCache);
+
+            Response.Cache.SetNoStore();
         }
     }
 }
