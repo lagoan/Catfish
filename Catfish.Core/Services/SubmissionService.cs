@@ -71,6 +71,8 @@ namespace Catfish.Core.Services
             var attachmentFields = form.Fields.Where(f => f is Attachment).Select(f => f as Attachment);
             foreach(var att in attachmentFields)
             {
+                UpdateFiles(att, submissionItem);
+/*
                 string[] fileGuids = att.FileGuids.Split(new char[] { Attachment.FileGuidSeparator }, StringSplitOptions.RemoveEmptyEntries);
                 foreach(var guid in fileGuids)
                 {
@@ -85,6 +87,8 @@ namespace Catfish.Core.Services
                         Db.XmlModels.Remove(file);
                     }
                 }
+
+*/
             }
 
             if(collectionId > 0)
@@ -116,13 +120,6 @@ namespace Catfish.Core.Services
                 updatedItem.ParentMembers.Add(collection);
 
             return updatedItem;
-        }
-
-        public List<DataFile> UploadTempFiles(HttpRequestBase request)
-        {
-            List<DataFile> files = UploadFiles(request, "temp-files");
-            Db.XmlModels.AddRange(files);
-            return files;
         }
     }
 }

@@ -230,6 +230,7 @@
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
     <Content Include="robots.txt" />
+    <Content Include="Scripts\attachment.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Areas\Manager\Views\Metadata\Edit.cshtml" />
@@ -387,11 +388,12 @@
     <Content Include="Views\FormSubmission\EditorTemplates\CheckOption.cshtml" />
     <Content Include="Views\FormSubmission\Confirmation.cshtml" />
     <Content Include="Views\FormSubmission\EditorTemplates\FormViewModel.cshtml" />
-    <Content Include="Views\FormSubmission\EditorTemplates\Attachment.cshtml" />
+    <Content Include="Views\Shared\EditorTemplates\Attachment.cshtml" />
     <Content Include="Views\FormSubmission\EditorTemplates\DataFile.cshtml" />
     <Content Include="Views\Shared\DisplayTemplates\HtmlTag.cshtml" />
     <Content Include="Views\Shared\DisplayTemplates\Css.cshtml" />
     <Content Include="Views\Shared\DisplayTemplates\HtmlRegion.cshtml" />
+    <Content Include="Views\Shared\DisplayTemplates\Javascript.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -401,14 +403,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Areas\Manager\Views\Catfish\" />
-    <Folder Include="Areas\Manager\Views\EntityAssociationList\" />
-    <Folder Include="Areas\Manager\Views\Entity\" />
-    <Folder Include="Views\Attachment\" />
-    <Folder Include="Views\CatfishSinglePage\" />
-    <Folder Include="Views\Catfish\" />
     <Folder Include="Views\Language\" />
-    <Folder Include="Views\Shared\EditorTemplates\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Catfish.Core\Catfish.Core.csproj">

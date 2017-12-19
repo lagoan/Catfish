@@ -17,6 +17,7 @@ using Catfish.Areas.Manager.Models.ViewModels;
 using Catfish.Core.Models.Data;
 using Catfish.Areas.Manager.Helpers;
 using Catfish.Helpers;
+using Catfish.Core.Helpers;
 
 namespace Catfish.Areas.Manager.Controllers
 {
@@ -138,6 +139,7 @@ namespace Catfish.Areas.Manager.Controllers
                 }
             }
 
+            model.AttachmentField = new Attachment() { FileGuids = string.Join(Attachment.FileGuidSeparator.ToString(), model.Files.Select(f => f.GuidName)) };
             return View(model);
         }
 
@@ -192,34 +194,60 @@ namespace Catfish.Areas.Manager.Controllers
         }
 
         [HttpPost]
-        public JsonResult Upload(int id)
+        public JsonResult Upload()
         {
+            ////try
+            ////{
+            ////    List<DataFile> files = ItemService.UploadFiles(id, Request);
+            ////    db.SaveChanges();
+
+            ////    var ret = files.Select(f => new FileViewModel(f, id, ControllerContext.RequestContext, "items"));
+            ////    return Json(ret);
+            ////}
+            ////catch (Exception ex)
+            ////{
+            ////    //return 500 or something appropriate to show that an error occured.
+            ////    return Json(string.Empty);
+            ////}
+
             try
             {
-                ItemService srv = new ItemService(db);
-                List<DataFile> files = srv.UploadFiles(id, Request);
-                db.SaveChanges();
+                List<DataFile> files = ItemService.UploadTempFiles(Request);
+                Db.SaveChanges();
 
-                var ret = files.Select(f => new FileViewModel(f, id, ControllerContext.RequestContext, "items"));
+                //Saving ids  of uploaded files in the session because these files and thumbnails
+                //needs to be accessible by the user who is uploading them without restriction of any security rules.
+                //This is because these files are stored in the temporary area without associating to any items.
+                FileHelper.CacheGuids(Session, files);
+
+                var ret = files.Select(f => new FileViewModel(f, f.Id, ControllerContext.RequestContext, "items"));
                 return Json(ret);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                //return 500 or something appropriate to show that an error occured.
+                Response.StatusCode = 500;
                 return Json(string.Empty);
             }
         }
 
         [HttpPost]
-        public JsonResult DeleteFile(int id, string guidName)
+        public JsonResult DeleteCashedFile(string guidName)
         {
             try
             {
-                ItemService srv = new ItemService(db);
-                if (!srv.DeleteFile(id, guidName))
+                //Makes sure that the requested file is in the cache
+                if(!FileHelper.CheckGuidCache(Session, guidName))
                 {
-                    Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    Response.StatusDescription = "BadRequest: file cannot be deleted as it is referred by one or more form submissions.";
+                    Response.StatusCode = (int)HttpStatusCode.NotFound;
+                    Response.StatusDescription = "BadRequest: the file cannot be deleted -  NOT IN CACHE.";
+                    return Json(string.Empty);
+                }
+
+                ItemService srv = new ItemService(db);
+                if (!srv.DeleteStandaloneFile(guidName))
+                {
+                    Response.StatusCode = (int)HttpStatusCode.NotFound;
+                    Response.StatusDescription = "The file not found";
                     return Json(string.Empty);
                 }
 
@@ -229,7 +257,7 @@ namespace Catfish.Areas.Manager.Controllers
             catch (Exception)
             {
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    Response.StatusDescription = "BadRequest: an unknown error occurred.";
+                Response.StatusDescription = "BadRequest: an unknown error occurred.";
                 return Json(string.Empty);
             }
         }
@@ -241,7 +269,7 @@ namespace Catfish.Areas.Manager.Controllers
             if (file == null)
                 return HttpNotFound("File not found");
 
-            string path_name = Path.Combine(srv.UploadRoot, file.Path, file.GuidName);
+            string path_name = Path.Combine(ConfigHelper.UploadRoot, file.Path, file.GuidName);
             return new FilePathResult(path_name, file.ContentType);
         }
 
@@ -254,7 +282,7 @@ namespace Catfish.Areas.Manager.Controllers
 
             string path_name = file.ThumbnailType == DataFile.eThumbnailTypes.Shared
                 ? Path.Combine(FileHelper.GetThumbnailRoot(Request), file.Thumbnail)
-                : Path.Combine(srv.UploadRoot, file.Path, file.Thumbnail);
+                : Path.Combine(ConfigHelper.UploadRoot, file.Path, file.Thumbnail);
 
             return new FilePathResult(path_name, file.ContentType);
         }

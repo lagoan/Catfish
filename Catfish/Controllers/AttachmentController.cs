@@ -1,4 +1,5 @@
 ﻿using Catfish.Areas.Manager.Models.ViewModels;
+using Catfish.Core.Helpers;
 using Catfish.Core.Models;
 using Catfish.Core.Models.Data;
 using Catfish.Core.Services;
@@ -7,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Web;
 using System.Web.Mvc;
 
@@ -56,7 +58,7 @@ namespace Catfish.Controllers
             if (file == null)
                 return HttpNotFound("File not found");
 
-            string path_name = Path.Combine(srv.UploadRoot, file.Path, file.GuidName);
+            string path_name = Path.Combine(ConfigHelper.UploadRoot, file.Path, file.GuidName);
             return new FilePathResult(path_name, file.ContentType);
         }
 
@@ -74,9 +76,41 @@ namespace Catfish.Controllers
 
             string path_name = file.ThumbnailType == DataFile.eThumbnailTypes.Shared
                 ? Path.Combine(FileHelper.GetThumbnailRoot(Request), file.Thumbnail)
-                : Path.Combine(srv.UploadRoot, file.Path, file.Thumbnail);
+                : Path.Combine(ConfigHelper.UploadRoot, file.Path, file.Thumbnail);
 
             return new FilePathResult(path_name, file.ContentType);
+        }
+
+        [HttpPost]
+        public JsonResult DeleteCashedFile(string guidName)
+        {
+            try
+            {
+                //Makes sure that the requested file is in the cache
+                if (!FileHelper.CheckGuidCache(Session, guidName))
+                {
+                    Response.StatusCode = (int)HttpStatusCode.NotFound;
+                    Response.StatusDescription = "BadRequest: the file cannot be deleted -  NOT IN CACHE.";
+                    return Json(string.Empty);
+                }
+
+                ItemService srv = new ItemService(Db);
+                if (!srv.DeleteStandaloneFile(guidName))
+                {
+                    Response.StatusCode = (int)HttpStatusCode.NotFound;
+                    Response.StatusDescription = "The file not found";
+                    return Json(string.Empty);
+                }
+
+                Db.SaveChanges();
+                return Json(new List<string>() { guidName });
+            }
+            catch (Exception)
+            {
+                Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                Response.StatusDescription = "BadRequest: an unknown error occurred.";
+                return Json(string.Empty);
+            }
         }
     }
 

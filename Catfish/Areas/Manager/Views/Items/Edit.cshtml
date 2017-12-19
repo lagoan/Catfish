@@ -1,6 +1,6 @@
 ﻿@model Catfish.Core.Models.Item
 @using Catfish.Areas.Manager.Models.ViewModels;
-@using Catfish.Core.Models.Data;
+@using Catfish.Core.Models.Forms;
 
 @{  ViewBag.Title = Model.Id > 0 ? "Edit Item" : "Create Item"; }
 
@@ -9,13 +9,15 @@
     <script type="text/javascript" src="~/Scripts/knockout-3.1.0.js"></script>
     <script type="text/javascript" src="~/Scripts/knockout.mapping-latest.js"></script>
     <script type="text/javascript" src="~/Scripts/perpetuum.knockout.js"></script>
-    <script type="text/javascript" src="~/Scripts/fileupload.js"></script>
+<script type="text/javascript" src="~/Scripts/fileupload.js"></script>
+    <script type="text/javascript" src="~/Scripts/attachment.js"></script>
     <link rel="stylesheet" type="text/css" href="~/Content/Css/catfish.css">
 
     <script type="text/javascript">
         var uploadApiUrl = "@Url.Action("upload", "items", new { id = Model.Id })";
         var deleteApiUrl = "@Url.Action("deleteFile", "items", new { id = Model.Id })";
-        var itemId = @Model.Id;
+
+        @*var itemId = @Model.Id;
         var uploadFieldCssId = "#uploadField";
         var uploadButtonCssId = "#uploadButton";
         var progressBarCssId = "#progressBar";
@@ -33,7 +35,7 @@
         $(function () {
             $("#progressBar").hide();
             $("#uploadErrorMessage").hide();
-        });
+        });*@
     </script>
 }
 
@@ -62,20 +64,59 @@
 }
 else
 {
-    <div class="grid_12 bs">
-        <div class="box">
-            <div class="title">
-                Metadata
-            </div>
-
-            @using (Html.BeginForm("Edit", "Items", FormMethod.Post))
-            {
+    using (Html.BeginForm("Edit", "Items", FormMethod.Post))
+    {
+        <div class="grid_12 bs">
+            <div class="box">
+                <div class="title">
+                    Metadata
+                </div>
                 @Html.Partial("Partial/EditEntity")
-            }
+            </div>
         </div>
-    </div>
 
-    <div class="grid_12 bs">
+        if (Model.FormSubmissions.Count() > 0)
+        {
+            <div class="grid_12 bs">
+                <div class="box">
+                    <div class="title">
+                        Form Submissions
+                    </div>
+                    <div class="form-view">
+                        @Html.DisplayFor(m => m.FormSubmissions, new { Item = Model })
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="grid_12 bs">
+            <div class="box">
+                <div class="title">
+                    Files
+                </div>
+                <div class="form-view">
+                    @{ 
+                        List<string> crossLinkedFileGuidSets = Model.FormSubmissions
+                            .SelectMany(form => form.FormData.Fields.Where(field => field is Attachment))
+                            .Select(field => (field as Attachment).FileGuids).ToList();
+                        var crossLinkedFileGuids = crossLinkedFileGuidSets.SelectMany(set => set.Split(new char[] { Attachment.FileGuidSeparator }, StringSplitOptions.RemoveEmptyEntries)).ToList();
+                    }  
+                    @Html.EditorFor(m => m.AttachmentField,
+                   new {
+                       UploadApiUrl = @Url.Action("upload", "items"),
+                       DeleteApiUrl = @Url.Action("deleteCashedFile", "items"),
+                       Files = Model.Files.ToList(),
+                       CrossLinkedFileGuids = crossLinkedFileGuids,
+                       ParentId = Model.Id,
+                       Controller = "items"
+                   })
+                </div>
+            </div>
+        </div>
+
+    }
+
+    @*<div class="grid_12 bs">
         <div class="box">
             <div class="title">
                 Files
@@ -117,21 +158,7 @@ else
             </div>
 
         </div>
-    </div>
+    </div>*@
 
-    if (Model.FormSubmissions.Count() > 0)
-    {
-        <div class="grid_12 bs">
-            <div class="box">
-                <div class="title">
-                    Form Submissions
-                </div>
-                <div class="form-view">
-                    @Html.DisplayFor(m => m.FormSubmissions, new { Item = Model })
-                </div>
-            </div>
-        </div>
-
-    }
 }
 
