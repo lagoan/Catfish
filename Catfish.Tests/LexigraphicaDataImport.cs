@@ -303,11 +303,11 @@ namespace Catfish.Tests
                     audits.Add(comment_create_audit);
                 }
 
-                DateTime photCreated = DateTime.Parse(photo.created_at);
+                DateTime photoCreated = DateTime.Parse(photo.created_at);
                 DateTime photoUpdated = DateTime.Parse(photo.updated_at);
                 DateTime lastUpdated = photoComments.Count > 0 ? commentUpdated.Max() : photoUpdated;
 
-                SetTimeStamps(photCreated, photoUpdated, item.Data);
+                SetTimeStamps(photoCreated, photoUpdated, item.Data);
                 for (int i = 0; i < commentSubmissions.Count; ++i)
                 {
                     SetTimeStamps(commentCreated[i], commentUpdated[i], commentSubmissions[i].Data);
