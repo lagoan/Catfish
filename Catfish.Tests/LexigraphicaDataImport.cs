@@ -255,8 +255,6 @@ namespace Catfish.Tests
             SubmissionService subSrv = new SubmissionService(db);
             foreach (var photo in photos)
             {
-                if (photo.id < 2258)
-                    continue;
                 Item item = itemSrv.CreateEntity<Item>(photoEntityTypeId.Value);
                 List<AuditEntry> audits = new List<AuditEntry>();
 
@@ -344,7 +342,7 @@ namespace Catfish.Tests
             }
             //var photos = JsonConvert.DeserializeAnonymousType<List<Photo>>.DeserializeObject(photos_data, typeof(List<Photo>));
 
-            //db.SaveChanges();
+            db.SaveChanges();
         }
 
     }
