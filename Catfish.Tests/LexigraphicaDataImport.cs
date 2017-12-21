@@ -338,6 +338,8 @@ namespace Catfish.Tests
                 }
                 item.Data.SetAttributeValue("updated", lastUpdated.ToString());
 
+                item.Serialize();
+
                 db.Items.Add(item);
             }
             //var photos = JsonConvert.DeserializeAnonymousType<List<Photo>>.DeserializeObject(photos_data, typeof(List<Photo>));
