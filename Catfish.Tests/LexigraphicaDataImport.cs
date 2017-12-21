@@ -9,6 +9,8 @@ using System.IO;
 using Catfish.Core.Services;
 using Catfish.Core.Models.Data;
 using System.Xml.Linq;
+using System.Drawing;
+using Catfish.Core.Helpers;
 
 namespace Catfish.Tests
 {
@@ -107,6 +109,8 @@ namespace Catfish.Tests
         [TestMethod]
         public void ImportData()
         {
+            Assert.Fail("Data importing is already completed!!");
+
             CatfishDbContext db = new CatfishDbContext();
 
             //Making sure that the Lexigraphica metadata set exists
@@ -280,6 +284,20 @@ namespace Catfish.Tests
 
                 }
 
+                //ingesting the photo file
+                string photoPathName = Path.Combine(@"C:\Users\Kamal\Documents\Projects\Catfish\Lexigraphica_Source_Data\pictures", photo.filename);
+                string contentType = System.Web.MimeMapping.GetMimeMapping(photoPathName);
+                string dstFolder = Path.Combine(ConfigHelper.DataRoot, item.Guid);
+                Directory.CreateDirectory(dstFolder);
+                DataFile file;
+                using (FileStream src = File.OpenRead(photoPathName))
+                {
+                    file = itemSrv.InjestFile(src, photo.filename, contentType, dstFolder);
+                }
+                item.AddData(file);
+
+                //Updating timestamps
+                //===================
                 List<Comment> photoComments = comments.Where(c => c.photo_id == photo.id).ToList();
                 List<DateTime> commentCreated = new List<DateTime>();
                 List<DateTime> commentUpdated = new List<DateTime>();
@@ -314,17 +332,13 @@ namespace Catfish.Tests
                     SetTimeStamps(commentCreated[i], commentUpdated[i], audits[i+1].Data);
                 }
                 item.Data.SetAttributeValue("updated", lastUpdated.ToString());
-                
 
                 db.Items.Add(item);
             }
             //var photos = JsonConvert.DeserializeAnonymousType<List<Photo>>.DeserializeObject(photos_data, typeof(List<Photo>));
 
-            var photoUsers = photos.Select(x => x.user_id).Distinct().ToList();
-            var commentUsers = comments.Select(x => x.user_id).Distinct().ToList();
-
-            int xx = 0;
-
+            db.SaveChanges();
         }
+
     }
 }

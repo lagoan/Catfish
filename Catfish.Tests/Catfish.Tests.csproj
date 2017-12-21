@@ -69,6 +69,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LexigraphicaDataImport.cs" />
     <Compile Include="ManagerIntegrationTests.cs" />
     <Compile Include="RandomDataIngest.cs" />
     <Compile Include="TestData.cs" />
