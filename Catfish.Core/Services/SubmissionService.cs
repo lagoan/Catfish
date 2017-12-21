@@ -47,7 +47,7 @@ namespace Catfish.Core.Services
                 submissionItem = Db.Items.Where(m => m.Id == itemId).FirstOrDefault();
                 if (submissionItem == null)
                     throw new Exception("Specified item not found");
-
+                submissionItem.LogChange(submissionItem.Guid, "Updated.");
                 Db.Entry(submissionItem).State = System.Data.Entity.EntityState.Modified;
             }
 
@@ -70,26 +70,7 @@ namespace Catfish.Core.Services
             //submission item, then include them and remove them from the main XMLModel table
             var attachmentFields = form.Fields.Where(f => f is Attachment).Select(f => f as Attachment);
             foreach(var att in attachmentFields)
-            {
                 UpdateFiles(att, submissionItem);
-/*
-                string[] fileGuids = att.FileGuids.Split(new char[] { Attachment.FileGuidSeparator }, StringSplitOptions.RemoveEmptyEntries);
-                foreach(var guid in fileGuids)
-                {
-                    DataObject file = Db.XmlModels.Where(m => m.Guid == guid)
-                        .Select(m => m as DataObject)
-                        .FirstOrDefault();
-                    if(file != null)
-                    {
-                        submissionItem.AddData(file);
-                        //since the data object has now been inserted into the submission item, it is no longer needed 
-                        //to stay as a stanalone object in the XmlModel table.
-                        Db.XmlModels.Remove(file);
-                    }
-                }
-
-*/
-            }
 
             if(collectionId > 0)
             {
@@ -100,26 +81,6 @@ namespace Catfish.Core.Services
                 collection.AppendChild(submissionItem);
             }
             return submissionItem;
-        }
-
-        //public IQueryable<T> GetForms<T>() where T: Form
-        //{
-        //    IQueryable<T> ms = Db.Forms.Where(m => m is T).Select(m => m as T);
-        //    return ms;
-        //}
-        public Item SaveFormSubmission(int collectionId, Item item)
-        {
-            Collection collection = collectionId > 0 ? Db.Collections.Where(c => c.Id == collectionId).FirstOrDefault() : null;
-            if (collectionId > 0 && collection == null)
-                throw new Exception("The target collection for form submissions does not exist.");
-
-            ItemService srv = new ItemService(Db);
-            Item updatedItem = srv.UpdateStoredItem(item);
-
-            if (collection != null)
-                updatedItem.ParentMembers.Add(collection);
-
-            return updatedItem;
         }
     }
 }

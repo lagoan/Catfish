@@ -18,13 +18,13 @@ namespace Catfish.Core.Models
 
         public Form()
         {
-            Ref = System.Guid.NewGuid().ToString("N");
+            Guid = System.Guid.NewGuid().ToString("N");
         }
 
-        public bool CheckFileReference(string fileGuidName)
+        public bool CheckFileReference(string guid)
         {
             foreach(var attachmentField in Fields.Where(f => f is Attachment).Select(f => f as Attachment))
-                if (attachmentField.FileGuids.Contains(fileGuidName))
+                if (attachmentField.FileGuids.Contains(guid))
                     return true;
             return false;
         }

@@ -54,7 +54,7 @@ namespace Catfish.Areas.Manager.Controllers
                 if (model != null)
                 {
                     Db.Entry(model).State = EntityState.Deleted;
-                    Db.SaveChanges();
+                    Db.SaveChanges(User.Identity);
                 }
             }
             return RedirectToAction("index");
@@ -76,32 +76,6 @@ namespace Catfish.Areas.Manager.Controllers
             return View(entity);
         }
 
-        /*
-        // GET: Manager/Items/Create
-        public ActionResult Create()
-        {
-            ViewBag.EntityTypeId = new SelectLi st(db.EntityTypes, "Id", "Name");
-            return View();
-        }
-
-        // POST: Manager/Items/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "Id,Name,Created,Updated,EntityTypeId")] Entity entity)
-        {
-            if (ModelState.IsValid)
-            {
-                db.Entities.Add(entity);
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
-
-            ViewBag.EntityTypeId = new SelectList(db.EntityTypes, "Id", "Name", entity.EntityTypeId);
-            return View(entity);
-        }
-        */
         // GET: Manager/Items/Edit/5
         public ActionResult Edit(int? id, int? entityTypeId)
         {
@@ -139,7 +113,7 @@ namespace Catfish.Areas.Manager.Controllers
                 }
             }
 
-            model.AttachmentField = new Attachment() { FileGuids = string.Join(Attachment.FileGuidSeparator.ToString(), model.Files.Select(f => f.GuidName)) };
+            model.AttachmentField = new Attachment() { FileGuids = string.Join(Attachment.FileGuidSeparator.ToString(), model.Files.Select(f => f.Guid)) };
             return View(model);
         }
 
@@ -154,7 +128,7 @@ namespace Catfish.Areas.Manager.Controllers
             {
                 ItemService srv = new ItemService(db);
                 Item dbModel = srv.UpdateStoredItem(model);
-                db.SaveChanges();
+                db.SaveChanges(User.Identity);
 
                 if (model.Id == 0)
                     return RedirectToAction("Edit", new { id = dbModel.Id });
@@ -199,7 +173,7 @@ namespace Catfish.Areas.Manager.Controllers
             try
             {
                 List<DataFile> files = ItemService.UploadTempFiles(Request);
-                Db.SaveChanges();
+                Db.SaveChanges(User.Identity);
 
                 //Saving ids  of uploaded files in the session because these files and thumbnails
                 //needs to be accessible by the user who is uploading them without restriction of any security rules.
@@ -217,12 +191,12 @@ namespace Catfish.Areas.Manager.Controllers
         }
 
         [HttpPost]
-        public JsonResult DeleteCashedFile(string guidName)
+        public JsonResult DeleteCashedFile(string guid)
         {
             try
             {
                 //Makes sure that the requested file is in the cache
-                if(!FileHelper.CheckGuidCache(Session, guidName))
+                if(!FileHelper.CheckGuidCache(Session, guid))
                 {
                     Response.StatusCode = (int)HttpStatusCode.NotFound;
                     Response.StatusDescription = "BadRequest: the file cannot be deleted -  NOT IN CACHE.";
@@ -230,15 +204,15 @@ namespace Catfish.Areas.Manager.Controllers
                 }
 
                 ItemService srv = new ItemService(db);
-                if (!srv.DeleteStandaloneFile(guidName))
+                if (!srv.DeleteStandaloneFile(guid))
                 {
                     Response.StatusCode = (int)HttpStatusCode.NotFound;
                     Response.StatusDescription = "The file not found";
                     return Json(string.Empty);
                 }
 
-                db.SaveChanges();
-                return Json(new List<string>() { guidName });
+                db.SaveChanges(User.Identity);
+                return Json(new List<string>() { guid });
             }
             catch (Exception)
             {
@@ -248,14 +222,14 @@ namespace Catfish.Areas.Manager.Controllers
             }
         }
 
-        public ActionResult File(int id, string guidName)
+        public ActionResult File(int id, string guid)
         {
             ItemService srv = new ItemService(db);
-            DataFile file = srv.GetFile(id, guidName);
+            DataFile file = srv.GetFile(id, guid);
             if (file == null)
                 return HttpNotFound("File not found");
 
-            string path_name = Path.Combine(file.Path, file.GuidName);
+            string path_name = Path.Combine(file.Path, file.LocalFileName);
             return new FilePathResult(path_name, file.ContentType);
         }
 

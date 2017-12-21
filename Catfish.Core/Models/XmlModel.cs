@@ -22,7 +22,7 @@ namespace Catfish.Core.Models
 
         public int Id { get; set; }
 
-        public string Guid { get; set; }
+        public string MappedGuid { get; set; }
 
         [NotMapped]
         public DateTime Created
@@ -96,23 +96,25 @@ namespace Catfish.Core.Models
         public string DefaultLanguage { get; set; }
 
         [NotMapped]
-        public string Ref
+        public string Guid
         {
             get
             {
-                var att = Data.Attribute("ref");
-                return att != null ? att.Value : System.Guid.NewGuid().ToString("N");
+                var att = Data.Attribute("guid");
+                if(att == null || string.IsNullOrEmpty(att.Value))
+                {
+                    Data.SetAttributeValue("guid", System.Guid.NewGuid().ToString("N"));
+                    att = Data.Attribute("guid");
+                }
+                return att.Value;
             }
             set
             {
-                Data.SetAttributeValue("ref", value);
+                Data.SetAttributeValue("guid", value);
             }
         }
 
-        public XmlModel(string defaultLang = "en")
-        {
-            DefaultLanguage = defaultLang;
-        }
+
 
         public XmlModel()
         {
@@ -121,7 +123,8 @@ namespace Catfish.Core.Models
             Created = DateTime.Now;
             Data.SetAttributeValue("model-type", this.GetType().AssemblyQualifiedName);
             Data.SetAttributeValue("IsRequired", false);
-            Guid = System.Guid.NewGuid().ToString("N");
+            MappedGuid = Guid; //Creates and uses the guid.
+            mChangeLog = new List<AuditChangeLog>();
         }
 
         public XElement GetWrapper(string tagName, bool createIfNotExist, bool enforceGuid)
@@ -209,11 +212,11 @@ namespace Catfish.Core.Models
             return data;
         }
 
-        public XmlModel(XElement ele, string defaultLang = "en")
-        {
-            Data = ele;
-            DefaultLanguage = defaultLang;
-        }
+        ////public XmlModel(XElement ele, string defaultLang = "en")
+        ////{
+        ////    Data = ele;
+        ////    DefaultLanguage = defaultLang;
+        ////}
 
         public virtual string GetName(string lang = null, bool tryReturnNoneEmpty = false)
         {
@@ -443,9 +446,7 @@ namespace Catfish.Core.Models
 
         public string GetAttribute(string attName, XElement data = null)
         {
-            if (data == null)
-                data = Data;
-            XAttribute att = data.Attribute(attName);
+            XAttribute att = data == null ? Data.Attribute(attName) : data.Attribute(attName);
             return att == null ? null : att.Value;
         }
 
@@ -464,22 +465,25 @@ namespace Catfish.Core.Models
         public void SetAttribute(string attName, string attValue, XElement data = null)
         {
             if (data == null)
-                data = Data;
-            data.SetAttributeValue(attName, attValue);
+                Data.SetAttributeValue(attName, attValue);
+            else
+                data.SetAttributeValue(attName, attValue);
         }
 
         public void SetAttribute(string attName, int attValue, XElement data = null)
         {
             if (data == null)
-                data = Data;
-            data.SetAttributeValue(attName, attValue);
+                Data.SetAttributeValue(attName, attValue);
+            else
+                data.SetAttributeValue(attName, attValue);
         }
 
         public void SetAttribute(string attName, bool attValue, XElement data = null)
         {
             if (data == null)
-                data = Data;
-            data.SetAttributeValue(attName, attValue);
+                Data.SetAttributeValue(attName, attValue);
+            else
+                data.SetAttributeValue(attName, attValue);
         }
 
 
@@ -532,24 +536,32 @@ namespace Catfish.Core.Models
 
 
         #region Audit Trail
-        public XElement GetAuditRoot()
+
+        private List<AuditChangeLog> mChangeLog;
+        public void LogChange(string target, string description)
+        {
+            mChangeLog.Add(new AuditChangeLog(target, description));
+        }
+
+        protected XElement GetAuditRoot()
         {
             XElement audit = Data.Element("audit");
             if (audit == null)
                 Data.Add(audit = new XElement("audit"));
             return audit;
         }
-        public IEnumerable<AuditEntry> GetAuditTrail()
-        {
 
-            return GetAuditRoot().Elements("entry").Select(e => new AuditEntry() { Data = e });
+        public AuditEntry SerializeAuditLog(AuditEntry.eAction action, string actor, DateTime? timestamp = null)
+        {
+            AuditEntry entry = new AuditEntry(action, actor, timestamp.HasValue ? timestamp.Value : DateTime.Now, mChangeLog);
+            GetAuditRoot().Add(entry.Data);
+            mChangeLog.Clear();
+            return entry;
         }
 
-        public AuditEntry AddAuditEntry(AuditEntry.eAction action, string user, string target)
+        public IEnumerable<AuditEntry> GetAuditTrail()
         {
-            AuditEntry entry = new AuditEntry() { Action = action, User = user, Target = target };
-            GetAuditRoot().Add(entry.Data);
-            return entry;
+            return GetAuditRoot().Elements("entry").Select(e => new AuditEntry(e));
         }
 
         public string GetCreator()
