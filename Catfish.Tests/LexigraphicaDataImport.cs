@@ -109,7 +109,7 @@ namespace Catfish.Tests
         [TestMethod]
         public void ImportData()
         {
-            Assert.Fail("Data importing is already completed!!");
+            //Assert.Fail("Data importing is already completed!!");
 
             CatfishDbContext db = new CatfishDbContext();
 
@@ -122,7 +122,7 @@ namespace Catfish.Tests
             Assert.AreNotEqual(null, ms);
             Assert.AreEqual(1, ms.Fields.Where(f => f.Name == "Words").Count());
             Assert.AreEqual(1, ms.Fields.Where(f => f.Name == "Phrases").Count());
-            Assert.AreEqual(1, ms.Fields.Where(f => f.Name == "Description").Count());
+            //Assert.AreEqual(1, ms.Fields.Where(f => f.Name == "Description").Count());
 
             List<Comment> comments = new List<Comment>();
             var str = File.ReadAllText(@"C:\Users\Kamal\Documents\Projects\Catfish\Lexigraphica_Source_Data\comments.txt");
@@ -243,8 +243,8 @@ namespace Catfish.Tests
             int? photoEntityTypeId = db.EntityTypes.Where(x => x.Name == "Photo").Select(x => x.Id).FirstOrDefault();
             Assert.IsTrue(photoEntityTypeId.Value > 0);
 
-            int? commentEntityTypeId = db.EntityTypes.Where(x => x.Name == "Comment").Select(x => x.Id).FirstOrDefault();
-            Assert.IsTrue(commentEntityTypeId.Value > 0);
+            ////int? commentEntityTypeId = db.EntityTypes.Where(x => x.Name == "Comment").Select(x => x.Id).FirstOrDefault();
+            ////Assert.IsTrue(commentEntityTypeId.Value > 0);
 
             int? commentFormId = db.FormTemplates.ToList().Where(x => x.Name == "Comment Form").Select(x => x.Id).FirstOrDefault();
             Assert.IsTrue(commentFormId.Value > 0);
@@ -255,12 +255,10 @@ namespace Catfish.Tests
             SubmissionService subSrv = new SubmissionService(db);
             foreach (var photo in photos)
             {
+                if (photo.id < 2258)
+                    continue;
                 Item item = itemSrv.CreateEntity<Item>(photoEntityTypeId.Value);
                 List<AuditEntry> audits = new List<AuditEntry>();
-
-                User creator = users.Where(u => u.id == photo.user_id).FirstOrDefault();
-                AuditEntry audit = item.AddAuditEntry(AuditEntry.eAction.Create, creator != null ? creator.username : "");
-                audits.Add(audit);
 
                 MetadataSet photoMetadata = item.MetadataSets.Where(m => m.Name == "Photo Metadata").FirstOrDefault();
 
@@ -296,8 +294,10 @@ namespace Catfish.Tests
                 }
                 item.AddData(file);
 
-                //Updating timestamps
-                //===================
+                User creator = users.Where(u => u.id == photo.user_id).FirstOrDefault();
+                AuditEntry entry = new AuditEntry(AuditEntry.eAction.Create, creator != null ? creator.username : "", DateTime.Parse(photo.created_at), new List<AuditChangeLog>());
+                item.AddAuditEntry(entry);
+
                 List<Comment> photoComments = comments.Where(c => c.photo_id == photo.id).ToList();
                 List<DateTime> commentCreated = new List<DateTime>();
                 List<DateTime> commentUpdated = new List<DateTime>();
@@ -317,10 +317,18 @@ namespace Catfish.Tests
                     commentSubmissions.Add(commentSubmission);
 
                     User commentUser = users.Where(u => u.id == comment.user_id).FirstOrDefault();
-                    var comment_create_audit = item.AddAuditEntry(AuditEntry.eAction.Update, commentUser.username);
-                    audits.Add(comment_create_audit);
+                    List<AuditChangeLog> changes = new List<AuditChangeLog>();
+                    changes.Add(new AuditChangeLog(commentSubmission.Guid, "Commented created"));
+                    var comment_audit = new AuditEntry(
+                        AuditEntry.eAction.Update,
+                        commentUser.username,
+                        DateTime.Parse(comment.created_at),
+                        changes);
+                    item.AddAuditEntry(comment_audit);
                 }
 
+                //Updating timestamps
+                //===================
                 DateTime photoCreated = DateTime.Parse(photo.created_at);
                 DateTime photoUpdated = DateTime.Parse(photo.updated_at);
                 DateTime lastUpdated = photoComments.Count > 0 ? commentUpdated.Max() : photoUpdated;
@@ -329,7 +337,6 @@ namespace Catfish.Tests
                 for (int i = 0; i < commentSubmissions.Count; ++i)
                 {
                     SetTimeStamps(commentCreated[i], commentUpdated[i], commentSubmissions[i].Data);
-                    SetTimeStamps(commentCreated[i], commentUpdated[i], audits[i+1].Data);
                 }
                 item.Data.SetAttributeValue("updated", lastUpdated.ToString());
 
@@ -337,7 +344,7 @@ namespace Catfish.Tests
             }
             //var photos = JsonConvert.DeserializeAnonymousType<List<Photo>>.DeserializeObject(photos_data, typeof(List<Photo>));
 
-            db.SaveChanges();
+            //db.SaveChanges();
         }
 
     }
