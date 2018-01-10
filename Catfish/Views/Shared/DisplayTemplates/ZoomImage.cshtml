@@ -1,0 +1,37 @@
+﻿@model Catfish.Models.Regions.ZoomImage
+
+@{
+
+    ViewBag.Title = "ZoomImage";
+    string cssId = Model.CssId;
+    var attachment = ViewData["attachments"];
+    if (string.IsNullOrEmpty(Model.ImageUrl) && ((System.Collections.Generic.List<Piranha.Models.Content>)attachment).Count > 0)
+    {
+        foreach (var att in (System.Collections.Generic.List<Piranha.Models.Content>)attachment)
+        {
+            if (att.IsImage)
+            {
+
+                Model.ImageUrl = UI.Content(att.Id).ToString();
+            }
+        }
+    }
+}
+
+<script src="~/Scripts/jquery.elevatezoom.js"></script>
+<h2>Zoom Image</h2>
+
+
+
+@*<image src="https://media.nature.com/w1172/magazine-assets/d41586-017-08492-y/d41586-017-08492-y_15320844.jpg" id="@cssId" data-zoom-image="https://media.nature.com/w1172/magazine-assets/d41586-017-08492-y/d41586-017-08492-y_15320844.jpg" width="400" height="300" />*@
+<image src="@Model.ImageUrl" id="@cssId" data-zoom-image="@Model.ImageUrl" width="400" height="300" />
+
+
+<script>
+   
+$("#@(cssId)").elevateZoom({
+  zoomType : "lens",
+  lensShape : "round",
+  lensSize    : 200
+});
+</script>

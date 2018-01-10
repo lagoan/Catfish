@@ -1,0 +1,12 @@
+﻿@model Catfish.Models.Regions.ZoomImage
+@{
+    ViewBag.Title = "ZoomImage";
+}
+
+
+<ul class="form">
+<li>@Html.LabelFor(m=>m.ImageUrl)
+    <div class="input"> @Html.EditorFor(m => m.ImageUrl)</div>
+</li>
+@Html.Partial("_CatfishRegion", Model)
+</ul>

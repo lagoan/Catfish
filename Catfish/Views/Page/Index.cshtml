@@ -6,9 +6,34 @@
 @{
     ViewBag.Title = Model.Page.Title;
 
-     foreach (KeyValuePair<string, object> region in Model.Regions)
-     {
-         @Html.DisplayFor(m => region.Value)
-     }
+    foreach (KeyValuePair<string, object> region in Model.Regions)
+    {
+        
+         @Html.DisplayFor(m => region.Value, new { attachments = Model.Attachments})
+    }
+
+    //get the attachments
+    @*if (Model.Attachments.Count > 0)
+    {
+        foreach (var att in Model.Attachments)
+        {
+            if (att.IsImage)
+            {
+                <img src="@UI.Content(att.Id)" title="@att.Name" width="100" height="80" /><br/>
+            }
+            else if (att.Type == "application/pdf")
+            {
+                <embed src="@UI.Content(att.Id)" width="400" height="500" /><br/>
+            }
+            else if (att.Type.Contains("audio/"))   //att.Type == "audio/mp3")
+            {<div> Audio
+    <audio src="@UI.Content(att.Id)" controls>
+        Your browser does not support the
+        <code>audio</code> element.
+    </audio>
+</div>
+            }
+        }
+    }*@
 }
    
