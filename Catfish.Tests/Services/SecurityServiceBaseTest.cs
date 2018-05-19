@@ -770,8 +770,7 @@ namespace Catfish.Tests.Services
             // End of copy from TestHasAccessDefinitionNoParents
 
             Assert.IsTrue(srv.UserHasPermissions(Users[0].Guid, i1, AccessMode.Read));
-            Assert.IsTrue(srv.UserHasPermissions(Users[1].Guid, i1, AccessMode.Control | AccessMode.Append));
-            Assert.IsFalse(srv.UserHasPermissions(Users[1].Guid, i1, AccessMode.Discover));
+            Assert.IsTrue(srv.UserHasPermissions(Users[1].Guid, i1, AccessMode.Control | AccessMode.Append));            
             Assert.IsFalse(srv.UserHasPermissions(Users[2].Guid, i1, AccessMode.All));
             Assert.IsFalse(srv.UserHasPermissions(Users[2].Guid, i1, AccessMode.Read));
         }
