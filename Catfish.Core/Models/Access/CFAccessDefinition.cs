@@ -8,6 +8,7 @@ using System.Xml.Linq;
 
 namespace Catfish.Core.Models.Access
 {
+    [Flags]
     public enum AccessMode
     {
         None     = 0,

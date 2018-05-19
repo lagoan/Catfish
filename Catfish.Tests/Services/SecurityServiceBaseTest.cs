@@ -828,14 +828,7 @@ namespace Catfish.Tests.Services
             CollectionAssert.AreEqual(expected0, result0);
             CollectionAssert.AreEqual(expected1, result1);
             Assert.AreEqual(0, result2.Count);
-            Assert.AreEqual(0, result3.Count);
-            
-            
-
-            // Three items
-            // List of 3 items (entities?)
-
-
+            Assert.AreEqual(0, result3.Count);           
 
         }
     }
