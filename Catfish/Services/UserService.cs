@@ -73,6 +73,12 @@ namespace Catfish.Services
             return user;
         }
 
+        public Piranha.Entities.User GetCurrentUser()
+        {
+            Piranha.Models.SysUser user = (Piranha.Models.SysUser)HttpContext.Current.Session[PiranhaApp.USER];
+            return GetUserById(user.Id.ToString());
+        }
+
         public IEnumerable<Piranha.Entities.User> GetAllUsers()
         {
            // IEnumerable<Piranha.Entities.User> users = null;

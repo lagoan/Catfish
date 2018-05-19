@@ -48,6 +48,20 @@ namespace Catfish.Core.Services
             return AccessMode.None;
         }
 
+        //XXX
+        public bool UserHasPermissions(string userGuid, CFEntity entity, AccessMode accessMode)
+        {
+            AccessMode entityAccessMode = GetPermissions(userGuid, entity);
+            return (accessMode & entityAccessMode) == accessMode;
+        }
+
+        //XXX
+        public IEnumerable<CFEntity> FilterCFEntities(string userGuid, 
+            IEnumerable<CFEntity> entities, AccessMode accessMode)
+        {
+            return entities.Where(x => UserHasPermissions(userGuid, x, accessMode));
+        }
+
         protected AccessMode GetAggregationPermissions(string userGuid, CFAggregation entity)
         {
             if (IsAdmin(userGuid))

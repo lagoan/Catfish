@@ -36,5 +36,26 @@ namespace Catfish.Services
 
             return false;
         }
+
+
+        public AccessMode CurrentUserPermissions(CFEntity entity)
+        {
+            string userGuid = UserService.GetCurrentUser().Id.ToString();
+            return GetPermissions(userGuid, entity);
+        }
+
+        public bool CurrentUserHasPermissions(CFEntity entity, AccessMode accessMode)
+        {
+            string userGuid = UserService.GetCurrentUser().Id.ToString();
+            return UserHasPermissions(userGuid, entity, accessMode);
+        }
+
+        public IEnumerable<CFEntity> CurrentUserFilterCFEntities(IEnumerable<CFEntity> entities, 
+            AccessMode accessMode)
+        {
+            string userGuid = UserService.GetCurrentUser().Id.ToString();
+            return FilterCFEntities(userGuid, entities, accessMode);
+        }
+
     }
 }

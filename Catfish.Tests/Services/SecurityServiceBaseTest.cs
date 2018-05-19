@@ -26,6 +26,10 @@ namespace Catfish.Tests.Services
 
         private List<TestUser> Users { get; set; }
         private List<string> Groups { get; set; }
+        private CFAccessDefinition ReadWriteAccessDefinition;
+        private CFAccessDefinition ControlAppendAccessDefinition;
+        private AccessMode ReadWriteAccessMode = AccessMode.Read | AccessMode.Write;
+        private AccessMode ControlAppendAccessMode = AccessMode.Control | AccessMode.Append;
 
         private TestUser CreateUser(SecurityServiceBase srv, string username, bool isAdmin = false)
         {
@@ -82,6 +86,18 @@ namespace Catfish.Tests.Services
             ul.CFUserListEntries.Add(new CFUserListEntry() { UserId = Guid.Parse(Users[3].Guid) });
             ulSrv.EditEntityGroup(ul);
             Groups.Add(ul.Id.ToString());
+
+            ReadWriteAccessDefinition = new CFAccessDefinition()
+            {
+                Name = "Read Write",
+                AccessModes = ReadWriteAccessMode
+            };
+
+            ControlAppendAccessDefinition = new CFAccessDefinition()
+            {
+                Name = "Control Append",
+                AccessModes = ControlAppendAccessMode
+            };
 
             Db.SaveChanges();
 
@@ -726,7 +742,105 @@ namespace Catfish.Tests.Services
             Assert.AreEqual(defaultAccess, modes3);
             Assert.AreEqual(defaultAccess, modes4);
         }
+
+        [TestMethod]
+        public void TestUserPermissions()
+        {
+            // Copied from  TestHasAccessDefinitionNoParents
+            SecurityServiceBase srv = new TestSecurityService(Db);
+            string itemName = "TestUserIsAdminItem";
+            string itemDesciption = "Test item description";
+            int entityType = mDh.Ets.GetEntityTypes(CFEntityType.eTarget.Items).FirstOrDefault().Id;
+            CFItem i1 = mDh.CreateItem(mDh.Is, entityType, itemName, itemDesciption, true);
+
+            List<CFAccessGroup> groups = new List<CFAccessGroup>()
+            {
+                new CFAccessGroup(){ AccessGuids = new List<Guid>(){
+                    Guid.Parse(Groups[0]) }, AccessDefinition = ReadWriteAccessDefinition
+                },
+                new CFAccessGroup(){ AccessGuids = new List<Guid>(){
+                    Guid.Parse(Users[1].Guid) }, AccessDefinition = ControlAppendAccessDefinition
+                }
+            };
+
+            i1.AccessGroups = groups;
+            i1.Serialize();
+            Db.SaveChanges();
+
+            // End of copy from TestHasAccessDefinitionNoParents
+
+            Assert.IsTrue(srv.UserHasPermissions(Users[0].Guid, i1, AccessMode.Read));
+            Assert.IsTrue(srv.UserHasPermissions(Users[1].Guid, i1, AccessMode.Control | AccessMode.Append));
+            Assert.IsFalse(srv.UserHasPermissions(Users[1].Guid, i1, AccessMode.Discover));
+            Assert.IsFalse(srv.UserHasPermissions(Users[2].Guid, i1, AccessMode.All));
+            Assert.IsFalse(srv.UserHasPermissions(Users[2].Guid, i1, AccessMode.Read));
+        }
+
+        [TestMethod]
+        public void TestEntityFilter()
+        {
+            SecurityServiceBase srv = new TestSecurityService(Db);
+            // Two users
+            // Two AccessDefinitions
+
+            int entityType = mDh.Ets.GetEntityTypes(CFEntityType.eTarget.Items).FirstOrDefault().Id;
+            List<CFItem> items = new List<CFItem>();
+            string itemNamePrefix = "Item ";            
+
+            List<CFAccessGroup> groups1 = new List<CFAccessGroup>()
+            {
+                new CFAccessGroup(){ AccessGuids = new List<Guid>(){Guid.Parse(Groups[0]) },
+                    AccessDefinition = ReadWriteAccessDefinition
+                }
+            };
+
+            List<CFAccessGroup> groups2 = new List<CFAccessGroup>()
+            {            
+                new CFAccessGroup(){ AccessGuids = new List<Guid>(){Guid.Parse(Users[2].Guid) },
+                    AccessDefinition = ControlAppendAccessDefinition
+                }
+            };
+
+            for (int i = 0; i < 4; i++)
+            {
+                CFItem currentItem = mDh.CreateItem(mDh.Is, entityType, itemNamePrefix + i, "Item description", true);
+                items.Add(currentItem);
+            }
+
+            items[0].AccessGroups = groups1;
+            items[1].AccessGroups = groups1;
+            items[2].AccessGroups = groups2;
+
+            List<CFEntity> result0 = srv.FilterCFEntities(Users[0].Guid, items, ReadWriteAccessMode).ToList();
+            List<CFEntity> result1 = srv.FilterCFEntities(Users[2].Guid, items, ControlAppendAccessMode).ToList();
+            List<CFEntity> result2 = srv.FilterCFEntities(Users[2].Guid, items, ReadWriteAccessMode).ToList();
+            List<CFEntity> result3 = srv.FilterCFEntities(Users[3].Guid, items, AccessMode.All).ToList();
+            List<CFEntity> expected0 = new List<CFEntity>()
+            {
+                items[0],
+                items[1],
+            };
+            List<CFEntity> expected1 = new List<CFEntity>()
+            {
+                items[2],
+            };
+
+            CollectionAssert.AreEqual(expected0, result0);
+            CollectionAssert.AreEqual(expected1, result1);
+            Assert.AreEqual(0, result2.Count);
+            Assert.AreEqual(0, result3.Count);
+            
+            
+
+            // Three items
+            // List of 3 items (entities?)
+
+
+
+        }
     }
+
+
 
     struct TestUser
     {
